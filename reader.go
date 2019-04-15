@@ -129,13 +129,11 @@ type Reader struct {
 
 	// If LazyQuotes is true, a quote may appear in an unquoted field and a
 	// non-doubled quote may appear in a quoted field.
+	// show signle quote
 	LazyQuotes bool
 
-	// If LazyQuotes is true, LazyQuoteChar is required
+	// If LazyQuotes is false, LazyQuoteChar will be replace to empty
 	LazyQuoteChar rune
-
-	// If want ignore LazyQuote char, IgnoreLazyQuote must is true, it conflict with LazyQuotes
-	IgnoreLazyQuote bool
 
 	// If TrimLeadingSpace is true, leading white space in a field is ignored.
 	// This is done even if the field delimiter, Comma, is white space.
@@ -288,19 +286,12 @@ func (r *Reader) readRecord(dst []string) ([]string, error) {
 	}
 
 	lazyQuoteChar := r.runeToBytes(r.LazyQuoteChar)
-	if r.LazyQuotes {
-		if len(lazyQuoteChar) == 0 {
-			return nil, errInvalidDelim
-		}
-		line = bytes.ReplaceAll(line, lazyQuoteChar, r.runeToBytes('"'))
+	if len(lazyQuoteChar) == 0 {
+		lazyQuoteChar = r.runeToBytes('"')
 	}
 
-	if r.IgnoreLazyQuote {
-		if len(lazyQuoteChar) == 0 {
-			return nil, errInvalidDelim
-		}
+	if !r.LazyQuotes {
 		line = bytes.ReplaceAll(line, lazyQuoteChar, []byte{})
-		r.LazyQuotes = false
 	}
 
 	// Parse each field in the record.
@@ -364,7 +355,7 @@ parseField:
 						break parseField
 					case r.LazyQuotes:
 						// `"` sequence (bare quote).
-						// r.recordBuffer = append(r.recordBuffer, '"')
+						r.recordBuffer = append(r.recordBuffer, '"')
 					default:
 						// `"*` sequence (invalid non-escaped quote).
 						col := utf8.RuneCount(fullLine[:len(fullLine)-len(line)-quoteLen])
