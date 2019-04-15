@@ -131,6 +131,12 @@ type Reader struct {
 	// non-doubled quote may appear in a quoted field.
 	LazyQuotes bool
 
+	// If LazyQuotes is true, LazyQuoteChar is required
+	LazyQuoteChar rune
+
+	// If want ignore LazyQuote char, IgnoreLazyQuote must is true, it conflict with LazyQuotes
+	IgnoreLazyQuote bool
+
 	// If TrimLeadingSpace is true, leading white space in a field is ignored.
 	// This is done even if the field delimiter, Comma, is white space.
 	TrimLeadingSpace bool
@@ -252,6 +258,10 @@ func nextRune(b []byte) rune {
 	return r
 }
 
+func (r *Reader) runeToBytes(ru rune) []byte {
+	return []byte(string([]rune{ru}))
+}
+
 func (r *Reader) readRecord(dst []string) ([]string, error) {
 	if r.Comma == r.Comment || !validDelim(r.Comma) || (r.Comment != 0 && !validDelim(r.Comment)) {
 		return nil, errInvalidDelim
@@ -275,6 +285,22 @@ func (r *Reader) readRecord(dst []string) ([]string, error) {
 	}
 	if errRead == io.EOF {
 		return nil, errRead
+	}
+
+	lazyQuoteChar := r.runeToBytes(r.LazyQuoteChar)
+	if r.LazyQuotes {
+		if len(lazyQuoteChar) == 0 {
+			return nil, errInvalidDelim
+		}
+		line = bytes.ReplaceAll(line, lazyQuoteChar, r.runeToBytes('"'))
+	}
+
+	if r.IgnoreLazyQuote {
+		if len(lazyQuoteChar) == 0 {
+			return nil, errInvalidDelim
+		}
+		line = bytes.ReplaceAll(line, lazyQuoteChar, []byte{})
+		r.LazyQuotes = false
 	}
 
 	// Parse each field in the record.
