@@ -364,7 +364,7 @@ parseField:
 						break parseField
 					case r.LazyQuotes:
 						// `"` sequence (bare quote).
-						r.recordBuffer = append(r.recordBuffer, '"')
+						// r.recordBuffer = append(r.recordBuffer, '"')
 					default:
 						// `"*` sequence (invalid non-escaped quote).
 						col := utf8.RuneCount(fullLine[:len(fullLine)-len(line)-quoteLen])
