@@ -1,3 +1,2 @@
 # csv
-## a golang encoding/csv copy
-## this repo will  support：  Ignore LazyQuote
+> a copy of golang encoding/csv . support Ignore LazyQuote char
